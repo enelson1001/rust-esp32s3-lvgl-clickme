@@ -1,0 +1,11 @@
+# http://esp-idf.readthedocs.io/en/latest/api-guides/partition-tables.html
+# This file uses a 3M factory instead of the default 1M
+
+# Espressif ESP32 Partition Table
+# Name,       Type, SubType, Offset,  Size
+nvs,          data, nvs,     0x9000,  0x6000
+phy_init,     data, phy,     0xf000,  0x1000
+factory,      app,  factory, 0x10000, 3M
+# The size 528k isn't arbitrary - it is the minumim size when
+# wear leveling sector size is 4k
+app_storage,  data, fat,     ,        528k
