@@ -23,7 +23,6 @@ use esp_idf_sys::{
     EspError,
 };
 
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct PanelConfig {
     pub clk_src: soc_periph_lcd_clk_src_t,
