@@ -5,21 +5,19 @@ pub mod lcd_panel;
 use log::*;
 
 use cstr_core::CString;
-
 use std::time::Instant;
 use std::{cell::RefCell, thread};
 
-use esp_idf_hal::{
+use esp_idf_svc::hal::{
     delay::{Ets, FreeRtos},
-    gpio::PinDriver,
+    gpio::{self, PinDriver},
     i2c::{I2cConfig, I2cDriver},
+    ledc::{
+        config::TimerConfig,
+        {LedcDriver, LedcTimerDriver},
+    },
     peripherals::Peripherals,
     units::FromValueType,
-};
-
-use esp_idf_hal::ledc::{
-    config::TimerConfig,
-    {LedcDriver, LedcTimerDriver},
 };
 
 use lvgl::style::Style;
@@ -32,7 +30,7 @@ use lvgl::input_device::{
     InputDriver,
 };
 
-use crate::gt911::GT911;
+use crate::gt911::{TouchState, GT911};
 use crate::lcd_panel::{LcdPanel, PanelConfig, PanelFlagsConfig, TimingFlagsConfig, TimingsConfig};
 
 fn main() -> anyhow::Result<()> {
@@ -47,7 +45,7 @@ fn main() -> anyhow::Result<()> {
 
     const HOR_RES: u32 = 800;
     const VER_RES: u32 = 480;
-    const LINES: u32 = 12; // The number of lines (rows) that will be refreshed
+    const LINES: u32 = 4; // The number of lines (rows) that will be refreshed  was 12
 
     let peripherals = Peripherals::take()?;
 
@@ -57,16 +55,18 @@ fn main() -> anyhow::Result<()> {
     //============================================================================================================
     //               Create the I2C to communicate with the touchscreen controller
     //============================================================================================================
+    info!("======== Create I2C ==========");
     let i2c = peripherals.i2c0;
     let sda = pins.gpio19;
     let scl = pins.gpio20;
     let config = I2cConfig::new().baudrate(100.kHz().into());
     let i2c = I2cDriver::new(i2c, sda, scl, &config)?;
-    let rst = PinDriver::output(pins.gpio38)?; // reset pin on GT911
 
     //============================================================================================================
     //               Create the LedcDriver to drive the backlight on the Lcd Panel
     //============================================================================================================
+
+    info!("========== Create LedcDriver ==========");
     let mut channel = LedcDriver::new(
         peripherals.ledc.channel0,
         LedcTimerDriver::new(
@@ -83,7 +83,7 @@ fn main() -> anyhow::Result<()> {
     //               Create thread for Lvgl and User Interface
     //============================================================================================================
     // Stack size value - 50,000 for 10 lines, 60,000 for 12 lines
-    let _lvgl_thread = thread::Builder::new().stack_size(60000).spawn(move || {
+    let _lvgl_thread = thread::Builder::new().stack_size(24000).spawn(move || {
         // Initialize lvgl
         lvgl::init();
 
@@ -99,8 +99,8 @@ fn main() -> anyhow::Result<()> {
         .unwrap();
 
         info!("=============  Registering Display ====================");
-        let buffer = DrawBuffer::<{ (HOR_RES * LINES) as usize }>::default();
-        let display = Display::register(buffer, HOR_RES, VER_RES, |refresh| {
+        let draw_buffer = DrawBuffer::<{ (HOR_RES * LINES) as usize }>::default();
+        let display = Display::register(draw_buffer, HOR_RES, VER_RES, |refresh| {
             lcd_panel
                 .set_pixels_lvgl_color(
                     refresh.area.x1.into(),
@@ -116,8 +116,11 @@ fn main() -> anyhow::Result<()> {
         //======================================================================================================
         //                          Create the driver for the Touchscreen
         //======================================================================================================
-        let gt911_touchscreen = RefCell::new(GT911::new(i2c, rst, Ets));
-        gt911_touchscreen.borrow_mut().reset().unwrap();
+        info!("=============  Creating Touchscreen ====================");
+        //let gt911_touchscreen = RefCell::new(GT911::new(i2c, rst, Ets));
+        //gt911_touchscreen.borrow_mut().reset().unwrap();
+        let touchscreen = RefCell::new(GT911::new(i2c));
+        reset_gt911(pins.gpio38.into());
 
         // The read_touchscreen_cb is used by Lvgl to detect touchscreen presses and releases
         let read_touchscreen_cb = || {
@@ -130,13 +133,29 @@ fn main() -> anyhow::Result<()> {
             // I orginally had outside the closure this statement -> let mut gt911_touchscreen = GT911::new(i2c, rst, Ets);
             // The solution was to use interior mutability to solve this problem. This means wrapping your mutable reference
             // within a special type (RefCell), that can be shared via an immutable reference, but still allows mutability of its inner value.
-            let touch = gt911_touchscreen.borrow_mut().read_touch().unwrap();
+
+            let touch = touchscreen.borrow_mut().read_touch().unwrap();
 
             match touch {
-                Some(tp) => PointerInputData::Touch(Point::new(tp.x as i32, tp.y as i32))
+                TouchState::PRESSED(tp) => {
+                    //info!("Pressed");
+                    PointerInputData::Touch(Point {
+                        x: tp.x as i32,
+                        y: tp.y as i32,
+                    })
                     .pressed()
-                    .once(),
-                None => PointerInputData::Touch(Point::new(0, 0)).released().once(),
+                    .once()
+                }
+
+                TouchState::RELEASED(tp) => {
+                    //info!("Released");
+                    PointerInputData::Touch(Point {
+                        x: tp.x as i32,
+                        y: tp.y as i32,
+                    })
+                    .released()
+                    .once()
+                }
             }
         };
 
@@ -146,6 +165,7 @@ fn main() -> anyhow::Result<()> {
         //=======================================================================================================
         //                               Create the User Interface
         //=======================================================================================================
+        info!("=============  Creating UI ====================");
         // Create screen and widgets
         let mut screen = display.get_scr_act().unwrap();
         let mut screen_style = Style::default();
@@ -157,7 +177,10 @@ fn main() -> anyhow::Result<()> {
         let mut button = Btn::create(&mut screen).unwrap();
         button.set_align(Align::LeftMid, 30, 0);
         button.set_size(180, 80);
+
+        // Create button label, align in center of button
         let mut btn_lbl = Label::create(&mut button).unwrap();
+        btn_lbl.set_align(Align::Center, 0, 0);
         btn_lbl
             .set_text(CString::new("Click me!").unwrap().as_c_str())
             .unwrap();
@@ -195,4 +218,13 @@ fn main() -> anyhow::Result<()> {
         // Don't exit application
         FreeRtos::delay_ms(1000);
     }
+}
+
+// Reset the GT911 chip
+fn reset_gt911(rst_pin: gpio::AnyOutputPin) {
+    let mut rst = PinDriver::output(rst_pin).unwrap();
+    rst.set_low().unwrap();
+    Ets::delay_us(200);
+    rst.set_high().unwrap();
+    Ets::delay_ms(5);
 }

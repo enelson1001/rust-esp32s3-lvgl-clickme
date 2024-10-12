@@ -11,6 +11,9 @@ env:
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Required otherwise lgvl-sys would fail to build with string.h not found
+  C_INCLUDE_PATH: "/home/runner/.rustup/toolchains/esp/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/xtensa-esp-elf/include"
+
 jobs:
   rust-checks:
     name: Rust Checks
@@ -30,8 +33,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Enable caching
         uses: Swatinem/rust-cache@v2
-      - name: Install gcc-multilib
-        run: sudo apt-get install gcc-multilib
       - name: Setup Rust
         uses: esp-rs/xtensa-toolchain@v1.5
         with:

@@ -1,10 +1,10 @@
 [package]
 name = "rust-esp32s3-lvgl-clickme"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["enelson1001 <ednelson5080@gmail>"]
 edition = "2021"
 resolver = "2"
-rust-version = "1.71"
+rust-version = "1.77"
 
 [profile.release]
 opt-level = "s"
@@ -25,10 +25,7 @@ embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-
 
 [dependencies]
 log = { version = "0.4", default-features = false }
-esp-idf-svc = { version = "0.47.3", default-features = false }
-
-esp-idf-hal = { version = "0.42.5" }
-esp-idf-sys = { version = "0.33.7"}
+esp-idf-svc = { version = "0.49.1", default-features = false }
 
 cstr_core = "0.2.1"
 embedded-graphics-core = "0.4.0"
@@ -36,20 +33,24 @@ embedded-graphics-core = "0.4.0"
 lvgl = { version = "0.6.2", default-features = false, features = [
     "embedded_graphics",
     "unsafe_no_autoinit",
+    #"lvgl_alloc",
 ] }
 
 lvgl-sys = { version = "0.6.2" }
 
-embedded-hal = {version = "1.0.0-rc.1"}
+embedded-hal = {version = "1.0.0"}
 
 anyhow = "1.0"
 
 
 [build-dependencies]
-embuild = "0.31.3"
+embuild = "0.32.0"
 
 
 [patch.crates-io]
-esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys"}
 lvgl = { git = "https://github.com/enelson1001/lv_binding_rust"}
 lvgl-sys = { git = "https://github.com/enelson1001/lv_binding_rust"}
+
+[[bin]]
+name = "rust-esp32s3-lvgl-clickme"
+harness = false

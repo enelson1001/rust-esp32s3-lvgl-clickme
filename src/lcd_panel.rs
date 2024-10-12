@@ -5,7 +5,7 @@ use std::ptr::null_mut;
 
 use core::cell::UnsafeCell;
 
-use esp_idf_sys::{
+use esp_idf_svc::sys::{
     esp,
     esp_lcd_new_rgb_panel,
     esp_lcd_panel_del,
@@ -350,7 +350,7 @@ impl Default for TimingFlagsConfig {
 }
 
 pub struct LcdPanel {
-    panel: esp_lcd_panel_handle_t,
+    pub panel: esp_lcd_panel_handle_t,
 }
 
 impl LcdPanel {
