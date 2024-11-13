@@ -12,7 +12,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Required otherwise lgvl-sys would fail to build with string.h not found
-  C_INCLUDE_PATH: "/home/runner/.rustup/toolchains/esp/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/xtensa-esp-elf/include"
+  C_INCLUDE_PATH: "/home/runner/.rustup/toolchains/esp/xtensa-esp-elf/esp-14.2.0_20240906/xtensa-esp-elf/xtensa-esp-elf/include"
 
 jobs:
   rust-checks:
@@ -39,5 +39,6 @@ jobs:
           default: true
           buildtargets: esp32s3
           ldproxy: true
+          version: 1.64.0.0
       - name: Run command
         run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
