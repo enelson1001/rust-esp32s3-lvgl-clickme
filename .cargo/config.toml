@@ -30,3 +30,6 @@ CFLAGS_xtensa_esp32s3_espidf="-mlongcalls"
 
 # Directory for custom fonts (written in C) that Lvgl can use
 LVGL_FONTS_DIR = {relative = true, value = "custom-fonts"}
+
+# If you are getting string.h NOT FOUND try including this.  Edit for your correct path.
+#C_INCLUDE_PATH = "/home/runner/.rustup/toolchains/esp/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/xtensa-esp-elf/include"

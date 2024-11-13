@@ -15,7 +15,7 @@ The partition-table folder contains a file called partitons.csv.  This file incr
 ## custom-fonts folder
 I left the custom-fonts folder in the project but currenly I am not using a custom but but instead using the LV_FONT_MONTSERRAT_28 enabled in the lv_conf.h file.
 I also made the LV_FONT_MONTSERRAT_28 as the LV_FONT_DEFAULT.
-The custom-fonts folder contains our custom fonts.  The customs fonts are converted from TTF fonts using lvgl online font converter at https://lvgl.io/tools/fontconverter.  I used https://ttfonts.net to find a font I liked and then downloaded the font.  In the lvgl-online-font-converter I used the font name plus the font size for the name of the font.  I chose Bpp of 2 bit-per-pixel and set the range of 0x30-0x3A since I only need numbers and the ":" character.  After clicking on "Convert" the file will be downloaded. I placed this downloaded file (*.c) into the custom-fonts folder.  Then I created a header file which has an extern to my *.c file, along with changing the ifndef and define names.  
+The custom-fonts folder contains our custom fonts.  The customs fonts are converted from TTF fonts using lvgl online font converter at https://lvgl.io/tools/fontconverter.  I used https://ttfonts.net to find a font I liked and then downloaded the font.  In the lvgl-online-font-converter I used the font name plus the font size for the name of the font.  I chose Bpp of 2 bit-per-pixel and set the range of 0x30-0x3A since I only need numbers and the ":" character.  After clicking on "Convert" the file will be downloaded. I placed this downloaded file (*.c) into the custom-fonts folder.  Then I created a header file which has an extern to my *.c file, along with changing the ifndef and define names.
 To use this custom font, I added ```LVGL_FONTS_DIR = {relative = true, value = "custom-fonts"}``` to my config.toml under [env].  This allows our font to be compiled when lvgl is compiled.
 
 ## lvgl-configs folder
@@ -72,12 +72,12 @@ lvgl-sys = { git = "https://github.com/enelson1001/lv_binding_rust"}
 ```
 
 ## config.toml
-To get lv-bindings-rust to comple and build I made the following changes to the config.toml file. 
+To get lv-bindings-rust to comple and build I made the following changes to the config.toml file.
 ```
 [build]
-target = "xtensa-esp32-espidf"
+target = "xtensa-esp32s3-espidf"
 
-[target.xtensa-esp32-espidf]
+[target.xtensa-esp32s3-espidf]
 linker = "ldproxy"
 # runner = "espflash --monitor" # Select this runner for espflash v1.x.x
 runner = "espflash flash --monitor" # Select this runner for espflash v2.x.x
@@ -85,19 +85,14 @@ rustflags = [
     # Extending time_t for ESP IDF 5: https://github.com/esp-rs/rust/issues/110
     "--cfg",
     "espidf_time64",
-
-    # Added the following 2 entries so lvgl will build without getting string.h file not found
-    "--sysroot",
-    "/home/ed/.rustup/toolchains/esp/xtensa-esp32s3-elf/esp-13.2.0_20230928/xtensa-esp-elf/xtensa-esp-elf/include",
 ]
-
 [unstable]
 build-std = ["std", "panic_abort"]
 
 [env]
-MCU = "esp32"
+MCU="esp32s3"
 # Note: this variable is not used by the pio builder (`cargo build --features pio`)
-ESP_IDF_VERSION = "v5.1.1"
+ESP_IDF_VERSION = "v5.2.2"
 
 # The directory that has the lvgl config files - lv_conf.h, lv_drv_conf.h
 DEP_LV_CONFIG_PATH = { relative = true, value = "lvgl-configs" }
@@ -105,9 +100,18 @@ DEP_LV_CONFIG_PATH = { relative = true, value = "lvgl-configs" }
 # Required to make lvgl build correctly otherwise get wrong file type
 CROSS_COMPILE = "xtensa-esp32-elf"
 
+# Required for lvgl otherwise the build would fail with the error -> dangerous relocation: call8: call target out of range
+# for some lvgl functions
+CFLAGS_xtensa_esp32s3_espidf="-mlongcalls"
+
 # Directory for custom fonts (written in C) that Lvgl can use
 LVGL_FONTS_DIR = {relative = true, value = "custom-fonts"}
+
+# If you are getting string.h NOT FOUND try including this.  Edit for your correct path.
+#C_INCLUDE_PATH = "/home/runner/.rustup/toolchains/esp/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/xtensa-esp-elf/include"
 ```
+## string.h Not Found
+If you are getting string.h not found try uncommenting the last entry in config.toml.
 
 ## lv-binding-rust fork
 I updated my fork of lv-binding-rust to include PR153 ie the changes recommended by madwizard-thomas.
@@ -129,5 +133,5 @@ The clicked
 
 
 # Versions
-### v1.0 : 
+### v1.0 :
 - initial release
