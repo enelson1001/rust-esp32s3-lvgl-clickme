@@ -39,6 +39,5 @@ jobs:
           default: true
           buildtargets: esp32s3
           ldproxy: true
-          version: 1.64.0.0
       - name: Run command
         run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
