@@ -49,8 +49,7 @@ pub struct TouchPoint {
 /// - The I2C Slave address of the GT911
 /// - The I2C Bus used to communicate with the GT911
 /// - The screen/panel orientation
-/// - The scree/panel dimesions
-
+/// - The screen/panel dimensions
 pub struct GT911<I2C>
 where
     I2C: I2c<SevenBitAddress>,

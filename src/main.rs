@@ -43,10 +43,6 @@ fn main() -> anyhow::Result<()> {
 
     info!("=================== Starting APP! =========================");
 
-    const HOR_RES: u32 = 800;
-    const VER_RES: u32 = 480;
-    const LINES: u32 = 4; // The number of lines (rows) that will be refreshed  was 12
-
     let peripherals = Peripherals::take()?;
 
     #[allow(unused)]
@@ -76,7 +72,8 @@ fn main() -> anyhow::Result<()> {
         .unwrap(),
         pins.gpio2,
     )?;
-    channel.set_duty(channel.get_max_duty() / 2)?;
+    //channel.set_duty(channel.get_max_duty() / 2)?;
+    channel.set_duty(channel.get_max_duty())?;
     info!("Backlight turned on");
 
     //============================================================================================================
@@ -99,6 +96,9 @@ fn main() -> anyhow::Result<()> {
         .unwrap();
 
         info!("=============  Registering Display ====================");
+        const HOR_RES: u32 = 800;
+        const VER_RES: u32 = 480;
+        const LINES: u32 = 4; // The number of lines (rows) that will be refreshed  was 12
         let draw_buffer = DrawBuffer::<{ (HOR_RES * LINES) as usize }>::default();
         let display = Display::register(draw_buffer, HOR_RES, VER_RES, |refresh| {
             lcd_panel
@@ -181,9 +181,7 @@ fn main() -> anyhow::Result<()> {
         // Create button label, align in center of button
         let mut btn_lbl = Label::create(&mut button).unwrap();
         btn_lbl.set_align(Align::Center, 0, 0);
-        btn_lbl
-            .set_text(CString::new("Click me!").unwrap().as_c_str())
-            .unwrap();
+        btn_lbl.set_text(CString::new("Click me!").unwrap().as_c_str());
 
         let mut btn_state = false;
         button
@@ -192,10 +190,10 @@ fn main() -> anyhow::Result<()> {
                     println!("Clicked Event");
                     if btn_state {
                         let nt = CString::new("Click me!").unwrap();
-                        btn_lbl.set_text(nt.as_c_str()).unwrap();
+                        btn_lbl.set_text(nt.as_c_str());
                     } else {
                         let nt = CString::new("Clicked!").unwrap();
-                        btn_lbl.set_text(nt.as_c_str()).unwrap();
+                        btn_lbl.set_text(nt.as_c_str());
                     }
                     btn_state = !btn_state;
                 }

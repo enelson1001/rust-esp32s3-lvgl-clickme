@@ -3,26 +3,23 @@ target = "xtensa-esp32s3-espidf"
 
 [target.xtensa-esp32s3-espidf]
 linker = "ldproxy"
-# runner = "espflash --monitor" # Select this runner for espflash v1.x.x
-runner = "espflash flash --monitor" # Select this runner for espflash v2.x.x
-rustflags = [
-    # Extending time_t for ESP IDF 5: https://github.com/esp-rs/rust/issues/110
-    "--cfg",
-    "espidf_time64",
-]
+runner = "espflash flash --monitor"
+rustflags = [ "--cfg",  "espidf_time64",]
+
 [unstable]
 build-std = ["std", "panic_abort"]
 
 [env]
 MCU="esp32s3"
+
 # Note: this variable is not used by the pio builder (`cargo build --features pio`)
-ESP_IDF_VERSION = "v5.2.2"
+ESP_IDF_VERSION = "v5.2.3"
 
 # The directory that has the lvgl config files - lv_conf.h, lv_drv_conf.h
 DEP_LV_CONFIG_PATH = { relative = true, value = "lvgl-configs" }
 
-# Required to make lvgl build correctly otherwise get wrong file type
-CROSS_COMPILE = "xtensa-esp32-elf"
+# Required to make lvgl build correctly otherwise get wrong file type (ie compiled for a big endian system and target is little endian)
+CROSS_COMPILE = "xtensa-esp32s3-elf"
 
 # Required for lvgl otherwise the build would fail with the error -> dangerous relocation: call8: call target out of range
 # for some lvgl functions
@@ -31,5 +28,6 @@ CFLAGS_xtensa_esp32s3_espidf="-mlongcalls"
 # Directory for custom fonts (written in C) that Lvgl can use
 LVGL_FONTS_DIR = {relative = true, value = "custom-fonts"}
 
-# If you are getting string.h NOT FOUND try including this.  Edit for your correct path and toolchain version
-C_INCLUDE_PATH = "/home/ed/.rustup/toolchains/esp/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/xtensa-esp-elf/include"
+# Required for lvgl to build otherwise you will get string.h not found.
+# Verfiy path and toolchain version being used on your PC (esp-14.2.0_20240906)
+TARGET_C_INCLUDE_PATH = "/home/ed/.rustup/toolchains/esp/xtensa-esp-elf/esp-14.2.0_20240906/xtensa-esp-elf/xtensa-esp-elf/include"

@@ -41,31 +41,40 @@ CONFIG_SPIRAM_RODATA=y
 ```
 
 ## Cargo.toml project file
-I added the following to the "dependencies" section.
+I have the following to the "dependencies" section.
 ```
-esp-idf-hal = { version = "0.42.5" }
-esp-idf-sys = { version = "0.33.7"}
+[dependencies]
+# Logging
+log = { version = "0.4", default-features = false }
 
-cstr_core = "0.2.1"
-embedded-graphics-core = "0.4.0"
+# ESP specifics
+esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync", "alloc"] }
 
+# LVGL
 lvgl = { version = "0.6.2", default-features = false, features = [
     "embedded_graphics",
     "unsafe_no_autoinit",
+    #"lvgl_alloc",
+    #"alloc"
 ] }
 
 lvgl-sys = { version = "0.6.2" }
 
-embedded-hal = {version = "1.0.0-rc.1"}
+# Hardware IO Abstraction Layer
+embedded-hal = {version = "1.0.0"}
+embedded-graphics-core = "0.4.0"
 
+# Error
 anyhow = "1.0"
+
+# C String
+cstr_core = "0.2.1"
 
 ```
 
 I also included patch.crates-io section to patch esp-idf-sys, lvgl and lvgl-sys
 ```
 [patch.crates-io]
-esp-idf-sys = { git = "https://github.com/esp-rs/esp-idf-sys"}
 lvgl = { git = "https://github.com/enelson1001/lv_binding_rust"}
 lvgl-sys = { git = "https://github.com/enelson1001/lv_binding_rust"}
 
@@ -79,26 +88,23 @@ target = "xtensa-esp32s3-espidf"
 
 [target.xtensa-esp32s3-espidf]
 linker = "ldproxy"
-# runner = "espflash --monitor" # Select this runner for espflash v1.x.x
-runner = "espflash flash --monitor" # Select this runner for espflash v2.x.x
-rustflags = [
-    # Extending time_t for ESP IDF 5: https://github.com/esp-rs/rust/issues/110
-    "--cfg",
-    "espidf_time64",
-]
+runner = "espflash flash --monitor"
+rustflags = [ "--cfg",  "espidf_time64",]
+
 [unstable]
 build-std = ["std", "panic_abort"]
 
 [env]
 MCU="esp32s3"
+
 # Note: this variable is not used by the pio builder (`cargo build --features pio`)
-ESP_IDF_VERSION = "v5.2.2"
+ESP_IDF_VERSION = "v5.2.3"
 
 # The directory that has the lvgl config files - lv_conf.h, lv_drv_conf.h
 DEP_LV_CONFIG_PATH = { relative = true, value = "lvgl-configs" }
 
-# Required to make lvgl build correctly otherwise get wrong file type
-CROSS_COMPILE = "xtensa-esp32-elf"
+# Required to make lvgl build correctly otherwise get wrong file type (ie compiled for a big endian system and target is little endian)
+CROSS_COMPILE = "xtensa-esp32s3-elf"
 
 # Required for lvgl otherwise the build would fail with the error -> dangerous relocation: call8: call target out of range
 # for some lvgl functions
@@ -107,14 +113,14 @@ CFLAGS_xtensa_esp32s3_espidf="-mlongcalls"
 # Directory for custom fonts (written in C) that Lvgl can use
 LVGL_FONTS_DIR = {relative = true, value = "custom-fonts"}
 
-# If you are getting string.h NOT FOUND try including this.  Edit for your correct path.
-#C_INCLUDE_PATH = "/home/runner/.rustup/toolchains/esp/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/xtensa-esp-elf/include"
+# Required for lvgl to build otherwise you will get string.h not found.
+# Verfiy path and toolchain version being used on your PC (esp-14.2.0_20240906)
+TARGET_C_INCLUDE_PATH = "/home/ed/.rustup/toolchains/esp/xtensa-esp-elf/esp-14.2.0_20240906/xtensa-esp-elf/xtensa-esp-elf/include"
 ```
-## string.h Not Found
-If you are getting string.h not found try uncommenting the last entry in config.toml.
+
 
 ## lv-binding-rust fork
-I updated my fork of lv-binding-rust to include PR153 ie the changes recommended by madwizard-thomas.
+I updated my fork of lv-binding-rust to include PR153 ie the changes recommended by madwizard-thomas and merged with Master commit d83b374
 
 ## Flashing the ESP32S3 device
 I used the following command to flash the ESP32S3 device.
@@ -135,3 +141,6 @@ The clicked
 # Versions
 ### v1.0 :
 - initial release
+
+## Change History
+Feb 04, 2025 - Use latest lv_binding_rust commit d83b374, use esp-idf-svc v0.51
